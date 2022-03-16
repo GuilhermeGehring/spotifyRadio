@@ -6,6 +6,10 @@ const {
   location,
   pages: {
     homeHTML,
+    controllerHTML,
+  },
+  constants: {
+    CONTENT_TYPE,
   },
 } = config;
 const controller = new Controller();
@@ -14,8 +18,10 @@ async function routes(request, response) {
   const { method, url } = request;
 
   if (method === 'GET' && url === '/') {
-    // eslint-disable-next-line quote-props
-    response.writeHead(302, { 'Location': location.home });
+    response.writeHead(302, {
+      // eslint-disable-next-line quote-props
+      'Location': location.home,
+    });
 
     return response.end();
   }
@@ -28,11 +34,50 @@ async function routes(request, response) {
     return stream.pipe(response);
   }
 
+  if (method === 'GET' && url === '/controller') {
+    const {
+      stream,
+    } = await controller.getFileStream(controllerHTML);
+
+    return stream.pipe(response);
+  }
+
+  // files
+  if (method === 'GET') {
+    const {
+      stream,
+      type,
+    } = await controller.getFileStream(url);
+    const contentType = CONTENT_TYPE[type];
+
+    if (contentType) {
+      response.writeHead(200, {
+        'Content-Type': contentType,
+      });
+    }
+    return stream.pipe(response);
+  }
+
+  response.writeHead(404);
+  response.end();
+
   return response.end('Hello World!');
+}
+
+function handleError(error, response) {
+  if (error.message.includes('ENOENT')) {
+    logger.warn(`asset not found ${error.stack}`);
+    response.writeHead(404);
+    return response.end();
+  }
+
+  logger.error(`caugh error on API ${error.stack}`);
+  response.writeHead(404);
+  return response.end();
 }
 
 // eslint-disable-next-line import/prefer-default-export
 export function handler(request, response) {
   return routes(request, response)
-    .catch((error) => logger.error(`Deu ruimmmm: ${error.stack}`));
+    .catch((error) => handleError(error, response));
 }

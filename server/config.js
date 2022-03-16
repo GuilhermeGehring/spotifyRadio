@@ -20,6 +20,13 @@ export default {
     controllerHTML: 'controller/index.html',
   },
   location: {
-    home: '/',
+    home: '/home',
+  },
+  constants: {
+    CONTENT_TYPE: {
+      '.html': 'text/html',
+      '.css': 'text/css',
+      '.js': 'text/javascript',
+    },
   },
 };
